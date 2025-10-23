@@ -1,0 +1,49 @@
+name: Sync Noctalia Docs
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0'  # weekly
+
+permissions:
+  contents: write  # enable pushes with GITHUB_TOKEN
+
+jobs:
+  clone-and-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+
+      - name: Clone noctalia-docs repo (shallow)
+        run: |
+          git clone --depth=1 https://github.com/noctalia-dev/noctalia-docs.git temp-docs
+
+      - name: Sync MDX (preserve subfolders) + optional assets
+        run: |
+          mkdir -p docs
+          # Copy all .mdx with directories preserved
+          rsync -av --prune-empty-dirs \
+            --include='*/' --include='*.mdx' --exclude='*' \
+            temp-docs/src/content/docs/ docs/
+
+          # OPTIONAL: copy common image assets referenced by MDX
+          # rsync -av --prune-empty-dirs \
+          #   --include='*/' --include='*.png' --include='*.jpg' --include='*.jpeg' --include='*.svg' --exclude='*' \
+          #   temp-docs/src/content/docs/ docs/
+
+      - name: Generate files.json index
+        run: |
+          cd docs
+          printf '[\n' > files.json
+          find . -type f -name '*.mdx' -printf '  "%P",\n' | sed '$ s/,$//' >> files.json
+          printf ']\n' >> files.json
+          cd -
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs
+          git commit -m "Sync Noctalia docs (MDX) [auto]" || echo "No changes to commit"
+          git push origin main
