@@ -1,0 +1,17 @@
+[
+  "configuration/bar.mdx",
+  "docs.mdx",
+  "getting-started/nixos.mdx",
+  "getting-started/keybinds.mdx",
+  "getting-started/faq.mdx",
+  "getting-started/app-theming.mdx",
+  "getting-started/running-the-shell.mdx",
+  "getting-started/installation.mdx",
+  "projects.mdx",
+  "development/widget.mdx",
+  "development/matugen.mdx",
+  "development/colorscheme.mdx",
+  "development/guideline.mdx",
+  "development/ipc.mdx",
+  "index.mdx"
+]

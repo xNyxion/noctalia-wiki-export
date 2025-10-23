@@ -1,0 +1,68 @@
+---
+title: Running the shell
+description: This page gives you a basic example on how to run the shell.
+sidebar:
+  order: 3
+---
+
+### Autostart by your Wayland compositor
+This is the recommended method for launching noctalia-shell, as it integrates with your window manager.
+
+For the *Niri* compositor, add the following line to the end of your configuration file, typically located at `~/.config/niri/config.kdl`
+```ini
+spawn-at-startup "qs" "-c" "noctalia-shell"
+```
+
+For the *Hyprland* compositor, append this line to your configuration file, typically located at `~/.config/hypr/hyprland.conf`
+```ini
+exec-once = qs -c noctalia-shell
+```
+
+:::tip[Important]
+- Be aware that the command might need to be adjusted based on how you installed `noctalia-shell`.
+- **Manual installation**: If you installed Noctalia into `~/.config/quickshell/`, you can use `qs` to start it. For keybindings, you must use `qs ipc ...` instead.
+:::
+
+
+### Running as a Systemd Service (Advanced)
+For more robust process management, you can configure Noctalia to run as a systemd user service. This approach provides automatic restarts on failure and centralizes logging with `journalctl`.
+
+#### 1. Create the service file
+First, create a new service definition file at `~/.config/systemd/user/noctalia.service` with the following content:
+
+```toml
+[Unit]
+Description=Noctalia Shell Service
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=qs -c noctalia-shell
+Restart=on-failure
+RestartSec=1
+
+[Install]
+WantedBy=graphical-session.target
+```
+
+#### 2. Enable and Start the Service
+
+Next, enable the service to have it start automatically with your graphical session.
+
+If you use a compositor like Niri, it's best to tie Noctalia directly to it. This ensures they start and stop together.
+
+```bash
+# Example for Niri users
+systemctl --user add-wants niri.service noctalia.service
+```
+
+Alternatively, you can enable it more generally with:
+```bash
+systemctl --user enable --now noctalia.service
+```
+
+### Manual Launch for Debugging
+The most direct way to run Noctalia for testing or debugging is to invoke it through Quickshell. Open a terminal and execute:
+```bash
+qs -c noctalia-shell
+```
