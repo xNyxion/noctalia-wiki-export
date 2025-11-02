@@ -1,4 +1,6 @@
 [
+  "configuration/general.mdx",
+  "configuration/controlcenter.mdx",
   "configuration/bar.mdx",
   "docs.mdx",
   "getting-started/nixos.mdx",
