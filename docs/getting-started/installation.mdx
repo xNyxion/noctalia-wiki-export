@@ -2,7 +2,7 @@
 title: Installation
 description: Start here to set up and use Noctalia.
 sidebar:
-  order: 1
+  order: 10
 ---
 
 Noctalia is packaged for [Arch Linux](#arch) and [NixOS](/getting-started/nixos), but can also be [installed manually](#manual-install) in other distributions.
@@ -92,51 +92,12 @@ tar -xz --strip-components=1 -C ~/.config/quickshell/noctalia-shell
 Manual installation keeps Noctalia contained within your user directory, making it easy to remove or update without affecting system packages.
 :::
 
----
-
-## Compositor Settings
-
-For the best experience with Noctalia, you'll need to configure your compositor with some specific settings.
-
-### Niri
-
-Add these settings to your Niri configuration file (usually `~/.config/niri/config.kdl`):
-
-```ini
-window-rule {
-    geometry-corner-radius 20
-    clip-to-geometry true
-}
-
-layer-rule {
-    match namespace="^quickshell-overview$"
-    place-within-backdrop true
-}
-
-debug {
-    honor-xdg-activation-with-invalid-serial
-}
-```
-
-These settings ensure:
-
-- Proper window activation handling
-- Rounded corners for a modern look
-- Correct backdrop placement for the overview panel
-- Allows Notification actions (`honor-xdg-activation-with-invalid-serial`)
-- Makes the file picker float (`match app-id="qs"`)
-
 :::note
 The configuration files are saved in `~/.config/noctalia/` and the cache files are saved in `~/.cache/noctalia/`.
 :::
 
 ---
 
-## Next Steps
-
-- **Keybinds**: Set up keyboard shortcuts for Noctalia in our [Keybinds Guide](../keybinds)
-- **Configuration**: Learn how to customize Noctalia in our [Configuration Guide](../running-the-shell)
-- **FAQ**: You encountered some problems? Please check the FAQ first [FAQ](../faq)
 
 ## Getting Help
 
