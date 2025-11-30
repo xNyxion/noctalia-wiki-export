@@ -1,7 +1,11 @@
 [
+  "configuration/laptop-battery.mdx",
+  "configuration/app-theming.mdx",
   "configuration/general.mdx",
+  "configuration/configure-noctalia.mdx",
   "configuration/controlcenter.mdx",
   "configuration/bar.mdx",
+  "configuration/advanced-app-theming.mdx",
   "docs.mdx",
   "getting-started/nixos.mdx",
   "getting-started/keybinds.mdx",
