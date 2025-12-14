@@ -46,6 +46,7 @@ Add the required inputs to your flake configuration:
 
   outputs = inputs@{ self, nixpkgs, ... }: {
     nixosConfigurations.awesomebox = nixpkgs.lib.nixosSystem {
+      specialArgs = { inherit inputs; };
       modules = [
         # ... other modules
         ./noctalia.nix
@@ -98,8 +99,7 @@ To configure Noctalia settings, you can use the Noctalia home manager module:
     programs.noctalia-shell = {
       enable = true;
       settings = {
-        # configure noctalia here; defaults will
-        # be deep merged with these attributes.
+        # configure noctalia here
         bar = {
           density = "compact";
           position = "right";
@@ -430,7 +430,7 @@ To add support for events in the calendar via evolution-data-server.
 
 ```nix
 # noctalia.nix
-{ pkgs, inputs, ... }:
+{ pkgs, inputs, lib, ... }:
 {
   services.gnome.evolution-data-server.enable = true;
 

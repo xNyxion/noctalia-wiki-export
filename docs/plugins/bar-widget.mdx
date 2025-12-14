@@ -197,13 +197,14 @@ MouseArea {
 ### Tooltips
 ```qml
 import qs.Services.UI
+import qs.Services.System
 
 MouseArea {
   anchors.fill: parent
   hoverEnabled: true
 
   onEntered: {
-    TooltipService.show(root, "Widget tooltip text")
+    TooltipService.show(root, "Widget tooltip text", BarService.getTooltipDirection())
   }
 
   onExited: {
@@ -211,6 +212,29 @@ MouseArea {
   }
 }
 ```
+
+You can also use a function to build dynamic tooltip content:
+
+```qml
+function buildTooltip() {
+  return "Status: " + (enabled ? "Active" : "Inactive")
+}
+
+MouseArea {
+  anchors.fill: parent
+  hoverEnabled: true
+
+  onEntered: {
+    TooltipService.show(root, buildTooltip(), BarService.getTooltipDirection())
+  }
+
+  onExited: {
+    TooltipService.hide()
+  }
+}
+```
+
+The `BarService.getTooltipDirection()` function automatically determines the correct tooltip direction based on the bar's position (top, bottom, left, or right).
 
 ## Opening Panels
 
@@ -552,6 +576,10 @@ Rectangle {
 
 - [Getting Started](/plugins/getting-started/) - Create your first plugin
 - [Panel Development](/plugins/panel/) - Create overlay panels
-- [Settings UI](/plugins/settings/) - Add configuration UI
 - [Plugin API](/plugins/api/) - Full API reference
-- [Styling Guide](/plugins/styling/) - Design system details
+- [Manifest Reference](/plugins/manifest/) - Plugin configuration
+
+:::info[Coming Soon]
+- Settings UI - Add configuration UI
+- Styling Guide - Design system details
+:::

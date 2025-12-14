@@ -11,6 +11,7 @@
   "plugins/panel.mdx",
   "plugins/getting-started.mdx",
   "plugins/manifest.mdx",
+  "plugins/ipc.mdx",
   "plugins/bar-widget.mdx",
   "plugins/overview.mdx",
   "getting-started/nixos.mdx",
