@@ -20,6 +20,8 @@
   "getting-started/nixos.mdx",
   "getting-started/keybinds.mdx",
   "getting-started/faq.mdx",
+  "getting-started/compositor-settings/hyprland.mdx",
+  "getting-started/compositor-settings/niri.mdx",
   "getting-started/app-theming.mdx",
   "getting-started/running-the-shell.mdx",
   "getting-started/installation.mdx",
