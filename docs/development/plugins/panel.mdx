@@ -36,7 +36,7 @@ Item {
   Rectangle {
     id: panelContainer
     anchors.fill: parent
-    color: Color.transparent
+    color: "transparent"
 
     // Your panel content here
   }
@@ -85,7 +85,7 @@ Organize panel content with layouts:
 Rectangle {
   id: panelContainer
   anchors.fill: parent
-  color: Color.transparent
+  color: "transparent"
 
   ColumnLayout {
     anchors {
@@ -138,7 +138,7 @@ MouseArea {
   anchors.fill: parent
   onClicked: {
     if (pluginApi) {
-      pluginApi.openPanel(root.screen)
+      pluginApi.openPanel(root.screen, root)
     }
   }
 }
@@ -147,10 +147,14 @@ MouseArea {
 Or programmatically:
 
 ```qml
-function showDetails() {
-  pluginApi.openPanel(root.screen)
+function showDetails(buttonItem) {
+  pluginApi.openPanel(root.screen, buttonItem)
 }
 ```
+
+:::tip
+Passing a button/widget reference as the second parameter makes the panel open near that widget.
+:::
 
 ## Closing the Panel
 
@@ -217,7 +221,7 @@ Rectangle {
   color: Color.mSurfaceVariant
 
   // Transparent (inherit from panel background)
-  color: Color.transparent
+  color: "transparent"
 }
 ```
 
@@ -280,7 +284,7 @@ Item {
   Rectangle {
     id: panelContainer
     anchors.fill: parent
-    color: Color.transparent
+    color: "transparent"
 
     ColumnLayout {
       anchors {
@@ -370,7 +374,7 @@ Item {
   Rectangle {
     id: panelContainer
     anchors.fill: parent
-    color: Color.transparent
+    color: "transparent"
 
     ColumnLayout {
       anchors {
@@ -536,7 +540,7 @@ Item {
   Rectangle {
     id: panelContainer
     anchors.fill: parent
-    color: Color.transparent
+    color: "transparent"
 
     ColumnLayout {
       anchors {
@@ -655,7 +659,7 @@ Item {
 // BarWidget.qml
 MouseArea {
   anchors.fill: parent
-  onClicked: pluginApi.openPanel(root.screen)
+  onClicked: pluginApi.openPanel(root.screen, root)
 }
 ```
 

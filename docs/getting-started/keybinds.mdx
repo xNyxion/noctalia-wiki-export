@@ -116,19 +116,60 @@ Noctalia provides extensive IPC (Inter-Process Communication) support, allowing 
 |----------|---------|-------------|
 | **Lock Screen** | `qs -c noctalia-shell ipc call lockScreen lock` | Lock your screen |
 | **Idle Inhibitor** | `qs -c noctalia-shell ipc call idleInhibitor toggle` | Prevent system from going idle |
+| **Enable Idle Inhibitor** | `qs -c noctalia-shell ipc call idleInhibitor enable` | Disable idle inhibitor |
+| **Disable Idle Inhibitor** | `qs -c noctalia-shell ipc call idleInhibitor disable` | Enable idle inhibitor |
 
 ### Notifications
 
 | Function | Command | Description |
 |---|---|---|
 | **Notification History** | `qs -c noctalia-shell ipc call notifications toggleHistory` | View past notifications |
+| **Get Notification History** | `qs -c noctalia-shell ipc call notifications getHistory` | Get the notification history as a JSON object |
 | **Toggle Do Not Disturb** | `qs -c noctalia-shell ipc call notifications toggleDND` | Toggle notification silence mode |
 | **Enable Do Not Disturb** | `qs -c noctalia-shell ipc call notifications enableDND` | Enable notification silence mode |
 | **Disable Do Not Disturb** | `qs -c noctalia-shell ipc call notifications disableDND` | Disable notification silence mode |
 | **Clear Notification History** | `qs -c noctalia-shell ipc call notifications clear` | Clear notification history |
 | **Remove Oldest** | `qs -c noctalia-shell ipc call notifications removeOldestHistory` | Remove oldest notification from history |
+| **Remove Notification** | `qs -c noctalia-shell ipc call notifications removeFromHistory $id` | Remove notification with given ID from history |
 | **Dismiss Oldest** | `qs -c noctalia-shell ipc call notifications dismissOldest` | Dismiss the oldest active notification |
 | **Dismiss All** | `qs -c noctalia-shell ipc call notifications dismissAll` | Dismiss all active notifications |
+
+### Toast & OSD
+
+#### Toast Notifications
+
+| Function | Command | Description |
+|----------|---------|-------------|
+| **Send Toast** | `qs -c noctalia-shell ipc call toast send '$json'` | Display a toast notification |
+
+The toast `send` command accepts a JSON object with the following fields:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | string | Yes | Toast title |
+| `body` | string | No | Toast body/description |
+| `icon` | string | No | Icon name (only for notice type) |
+| `type` | string | No | `notice` (default), `warning`, or `error` |
+| `duration` | number | No | Duration in ms (defaults: notice=3000, warning=4000, error=6000) |
+
+**Examples:**
+```bash
+# Simple notice
+qs -c noctalia-shell ipc call toast send '{"title": "Recording", "body": "Started (AV1 HDR)", "icon": "media-record"}'
+
+# Warning toast
+qs -c noctalia-shell ipc call toast send '{"title": "Low battery", "type": "warning"}'
+
+# Error with custom duration
+qs -c noctalia-shell ipc call toast send '{"title": "Connection failed", "body": "Check your network", "type": "error", "duration": 10000}'
+```
+
+#### On-Screen Display (OSD)
+
+| Function | Command | Description |
+|----------|---------|-------------|
+| **Show Text** | `qs -c noctalia-shell ipc call osd showText $text` | Display text on OSD |
+| **Show Text with Icon** | `qs -c noctalia-shell ipc call osd showTextWithIcon $text $icon` | Display text with an icon on OSD |
 
 ### Appearance
 
@@ -137,6 +178,8 @@ Noctalia provides extensive IPC (Inter-Process Communication) support, allowing 
 | Function | Command | Description |
 |----------|---------|-------------|
 | **Toggle Bar Visibility** | `qs -c noctalia-shell ipc call bar toggle` | Switch between invisible and visible |
+| **Show Bar** | `qs -c noctalia-shell ipc call bar show` | Sets the bar to be visible |
+| **Hide Bar** | `qs -c noctalia-shell ipc call bar hide` | Sets the bar to be invisible |
 | **Toggle Dock Visibility** | `qs -c noctalia-shell ipc call dock toggle` | Toggle dock visibility |
 | **Show Desktop Widgets** | `qs -c noctalia-shell ipc call desktopWidgets enable` | Enable the desktop widgets |
 | **Hide Desktop Widgets** | `qs -c noctalia-shell ipc call desktopWidgets disable` | Disable the desktop widgets |

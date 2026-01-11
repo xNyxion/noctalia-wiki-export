@@ -9,7 +9,7 @@ Every plugin component receives a `pluginApi` object that provides access to plu
 
 ## Plugin API Object
 
-The `pluginApi` object is injected into all plugin components (BarWidget, Panel, Main, Settings):
+The `pluginApi` object is injected into all plugin components (BarWidget, DesktopWidget, ControlCenterWidget, LauncherProvider, Panel, Main, Settings):
 
 ```qml
 Item {
@@ -154,6 +154,34 @@ readonly property bool hasDesktopWidget: pluginApi?.desktopWidget !== null
 This property is `null` if your plugin doesn't have a `desktopWidget` entry point in the manifest.
 :::
 
+### `controlCenterWidget`
+- **Type**: `Component` (or null)
+- **Read-only**: Yes
+- **Description**: Reference to the control center widget Component
+
+```qml
+// Check if plugin has a control center widget
+readonly property bool hasCCWidget: pluginApi?.controlCenterWidget !== null
+```
+
+:::note
+This property is `null` if your plugin doesn't have a `controlCenterWidget` entry point in the manifest.
+:::
+
+### `launcherProvider`
+- **Type**: `Component` (or null)
+- **Read-only**: Yes
+- **Description**: Reference to the launcher provider Component
+
+```qml
+// Check if plugin has a launcher provider
+readonly property bool hasProvider: pluginApi?.launcherProvider !== null
+```
+
+:::note
+This property is `null` if your plugin doesn't have a `launcherProvider` entry point in the manifest.
+:::
+
 ## Functions
 
 ### `saveSettings()`
@@ -190,26 +218,27 @@ NButton {
 Settings are saved to `~/.config/noctalia/plugins/<plugin-id>/settings.json`
 :::
 
-### `openPanel(screen)`
+### `openPanel(screen, buttonItem)`
 Open this plugin's panel on the specified screen.
 
 **Signature**:
 ```qml
-function openPanel(screen: ShellScreen): bool
+function openPanel(screen: ShellScreen, buttonItem?: Item): bool
 ```
 
 **Parameters**:
 - `screen` - The ShellScreen to open the panel on
+- `buttonItem` - (Optional) The button/widget that triggered the panel. If provided, the panel will position itself near this button.
 
 **Returns**: `true` if panel opened successfully, `false` otherwise
 
 **Usage**:
 ```qml
-// In BarWidget.qml
+// In BarWidget.qml - panel opens near the button
 MouseArea {
   anchors.fill: parent
   onClicked: {
-    pluginApi.openPanel(root.screen)
+    pluginApi.openPanel(root.screen, root)
   }
 }
 ```
@@ -217,10 +246,12 @@ MouseArea {
 **Example**:
 ```qml
 NIconButton {
+  id: myButton
   icon: "external-link"
   tooltip: "Open details"
   onClicked: {
-    if (pluginApi.openPanel(root.screen)) {
+    // Pass 'this' to position panel near the button
+    if (pluginApi.openPanel(root.screen, this)) {
       Logger.i("Plugin", "Panel opened")
     } else {
       Logger.w("Plugin", "Failed to open panel")
@@ -228,6 +259,10 @@ NIconButton {
   }
 }
 ```
+
+:::tip
+Pass `this` (or the widget reference) as the second parameter to have the panel open near the triggering button, similar to how core Noctalia panels work.
+:::
 
 :::note
 This only works if your plugin provides a `panel` entry point in the manifest.
@@ -256,6 +291,35 @@ NButton {
   }
 }
 ```
+
+### `togglePanel(screen, buttonItem)`
+Toggle this plugin's panel open/closed state.
+
+**Signature**:
+```qml
+function togglePanel(screen: ShellScreen, buttonItem?: Item): bool
+```
+
+**Parameters**:
+- `screen` - The ShellScreen to toggle the panel on
+- `buttonItem` - (Optional) The button/widget that triggered the panel. If provided, the panel will position itself near this button.
+
+**Returns**: `true` if operation succeeded, `false` otherwise
+
+**Usage**:
+```qml
+// In BarWidget.qml or ControlCenterWidget.qml
+NIconButtonHot {
+  icon: "my-icon"
+  onClicked: {
+    pluginApi.togglePanel(root.screen, this)
+  }
+}
+```
+
+:::tip
+`togglePanel` is commonly used in bar widgets and control center widgets to open/close the plugin's panel with a single click. Pass `this` as the second parameter to have the panel open near the triggering button.
+:::
 
 ### `tr(key, interpolations)`
 Translate a text key using plugin translations.
@@ -473,7 +537,7 @@ NText {
 Rectangle {
   color: Color.mSurface
   color: Color.mSurfaceVariant
-  color: Color.transparent
+  color: "transparent"
 }
 ```
 
@@ -644,8 +708,8 @@ Rectangle {
           pluginApi?.tr("widget.incremented") || "Incremented!"
         )
       } else if (mouse.button === Qt.RightButton) {
-        // Open panel
-        if (pluginApi.openPanel(root.screen)) {
+        // Open panel near this widget
+        if (pluginApi.openPanel(root.screen, root)) {
           Logger.i(pluginApi.pluginId, "Panel opened")
         }
       }
@@ -667,6 +731,8 @@ Rectangle {
 - [Getting Started](/development/plugins/getting-started/) - Create your first plugin
 - [Bar Widget](/development/plugins/bar-widget/) - Bar widget development
 - [Desktop Widget](/development/plugins/desktop-widget/) - Desktop widget development
+- [Control Center Widget](/development/plugins/control-center-widget/) - Control center widget development
+- [Launcher Provider](/development/plugins/launcher-provider/) - Launcher provider development
 - [Panel](/development/plugins/panel/) - Panel development
 - [Settings UI](/development/plugins/settings-ui/) - Settings UI development
 - [Translations](/development/plugins/translations/) - i18n guide
