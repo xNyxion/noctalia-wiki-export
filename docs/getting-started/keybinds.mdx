@@ -30,7 +30,6 @@ Noctalia provides extensive IPC (Inter-Process Communication) support, allowing 
 | Function | Command | Description |
 |----------|---------|-------------|
 | **Clipboard History** | `qs -c noctalia-shell ipc call launcher clipboard` | Access your clipboard history |
-| **Calculator** | `qs -c noctalia-shell ipc call launcher calculator` | Quick calculator access |
 | **Emoji** | `qs -c noctalia-shell ipc call launcher emoji` | Quick emoji selector access |
 | **Calendar** | `qs -c noctalia-shell ipc call calendar toggle` | Open/close the Calendar window |
 | **Session Menu** | `qs -c noctalia-shell ipc call sessionMenu toggle` | Logout, reboot, shutdown... |
@@ -83,13 +82,14 @@ Noctalia provides extensive IPC (Inter-Process Communication) support, allowing 
 |----------|---------|-------------|
 | **Brightness Up** | `qs -c noctalia-shell ipc call brightness increase` | Increase screen brightness |
 | **Brightness Down** | `qs -c noctalia-shell ipc call brightness decrease` | Decrease screen brightness |
+| **Brightness Down** | `qs -c noctalia-shell ipc call brightness set <value>` | Sets the screen brightness to value (0-100r) |
 | **NightLight Toggle** | `qs -c noctalia-shell ipc call nightLight toggle` | Toggle night light (force activation)/off |
 
 #### Screen Recorder
 
-| Function | Command | Description |
-|----------|---------|-------------|
-| **Screen record toggle** | `qs -c noctalia-shell ipc call screenRecorder toggle` | Start / stop the screen recording |
+:::warning[Deprecated]
+The `screenRecorder` IPC commands have been moved to the [Screen Recorder](/plugins/screen-recorder/) plugin. The old IPC syntax is no longer part of the core shell. See the plugin [README](https://github.com/noctalia-dev/noctalia-plugins/blob/main/screen-recorder/README.md) for the current IPC commands.
+:::
 
 #### Battery Management
 
@@ -253,7 +253,6 @@ binds {
 
     // Utility shortcuts
     Mod+V { spawn "qs" "-c" "noctalia-shell" "ipc" "call" "launcher" "clipboard"; }
-    Mod+C { spawn "qs" "-c" "noctalia-shell" "ipc" "call" "launcher" "calculator"; }
     Mod+L { spawn "qs" "-c" "noctalia-shell" "ipc" "call" "lockScreen" "lock"; }
 }
 ```
@@ -282,7 +281,6 @@ bindel = , XF86MonBrightnessDown, exec, qs -c noctalia-shell ipc call brightness
 
 # Utility shortcuts
 bind = SUPER, V, exec, qs -c noctalia-shell ipc call launcher clipboard
-bind = SUPER, C, exec, qs -c noctalia-shell ipc call launcher calculator
 bind = SUPER, L, exec, qs -c noctalia-shell ipc call lockScreen lock
 ```
 
