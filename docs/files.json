@@ -56,6 +56,7 @@
   "development/plugins/bar-widget.mdx",
   "development/plugins/translations.mdx",
   "development/plugins/overview.mdx",
+  "development/templates.mdx",
   "development/ipc.mdx",
   "plugins.mdx",
   "index.mdx"

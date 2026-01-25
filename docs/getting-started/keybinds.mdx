@@ -31,9 +31,11 @@ Noctalia provides extensive IPC (Inter-Process Communication) support, allowing 
 |----------|---------|-------------|
 | **Clipboard History** | `qs -c noctalia-shell ipc call launcher clipboard` | Access your clipboard history |
 | **Emoji** | `qs -c noctalia-shell ipc call launcher emoji` | Quick emoji selector access |
+| **Command** | `qs -c noctalia-shell ipc call launcher command` | Quick command runner access |
 | **Calendar** | `qs -c noctalia-shell ipc call calendar toggle` | Open/close the Calendar window |
 | **Session Menu** | `qs -c noctalia-shell ipc call sessionMenu toggle` | Logout, reboot, shutdown... |
 | **Lock & Suspend** | `qs -c noctalia-shell ipc call sessionMenu lockAndSuspend` | Lock the screen and suspend the system |
+| **System Monitor** | `qs -c noctalia-shell ipc call systemMonitor toggle` | Open/close the system monitor window |
 
 ### System Controls
 
@@ -82,7 +84,7 @@ Noctalia provides extensive IPC (Inter-Process Communication) support, allowing 
 |----------|---------|-------------|
 | **Brightness Up** | `qs -c noctalia-shell ipc call brightness increase` | Increase screen brightness |
 | **Brightness Down** | `qs -c noctalia-shell ipc call brightness decrease` | Decrease screen brightness |
-| **Brightness Down** | `qs -c noctalia-shell ipc call brightness set <value>` | Sets the screen brightness to value (0-100r) |
+| **Set Brightness** | `qs -c noctalia-shell ipc call brightness set <value>` | Sets the screen brightness to value (0-100) |
 | **NightLight Toggle** | `qs -c noctalia-shell ipc call nightLight toggle` | Toggle night light (force activation)/off |
 
 #### Screen Recorder
@@ -165,7 +167,9 @@ qs -c noctalia-shell ipc call toast send '{"title": "Connection failed", "body":
 ```
 
 #### On-Screen Display (OSD)
+Deprecated
 
+Use [Toast Notifications](#toast-notifications) instead
 | Function | Command | Description |
 |----------|---------|-------------|
 | **Show Text** | `qs -c noctalia-shell ipc call osd showText $text` | Display text on OSD |
@@ -287,6 +291,54 @@ bind = SUPER, L, exec, qs -c noctalia-shell ipc call lockScreen lock
 </details>
 
 ## Pro Tips
+
+You can also run `qs -c noctalia-shell ipc call show` to view all the IPC targets and handlers. 
+```bash
+$ qs -c noctalia-shell ipc call show
+
+# Output
+target media # target
+  function seekRelative(offset: string): void # handler seekRelative
+  function pause(): void
+  function seekByRatio(position: string): void
+  function stop(): void
+  function previous(): void
+  function playPause(): void
+  function play(): void
+  function next(): void
+  ...
+```
+You can use `qs -c noctalia-shell ipc call $target show` to view handlers available for specific targets.
+```bash
+$ qs -c noctalia-shell ipc call launcher show
+
+# Output 
+target launcher
+  function toggle(): void
+  function clipboard(): void
+  function emoji(): void
+```
+
+To execute emoji handler for launcher you can run
+```bash
+$ qs -c noctialia-shell ipc call launcher emoji
+```
+
+For IPC handlers with arguments in function you provide them after the command name
+```bash
+$ qs -c noctialia-shell ipc call media seekRelative 5
+```
+
+If IPC handler requires multiple arguments you provide them sequentially.
+```bash
+$ qs -c noctalia-shell ipc call wallpaper show
+# Output
+target wallpaper
+  ...
+  function set(path: string, screen: string): void
+  ...
+$ qs -c noctalia-shell ipc call wallpaper set $path $screen
+```
 
 :::tip[Custom scripts]
 You can combine multiple IPC calls in shell scripts for complex workflows:
