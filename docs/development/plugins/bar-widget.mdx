@@ -5,11 +5,11 @@ sidebar:
   order: 30
 ---
 
-Bar widgets are components that appear in the top or bottom bar of Noctalia Shell. They provide quick access to information and actions.
+Bar widgets are components that appear in the Noctalia bar (top, bottom, left, or right). They provide quick access to information and actions.
 
 ## Basic Structure
 
-A bar widget is a QML file that must follow this structure:
+A bar widget is a QML file that must follow this structure. The pattern uses an `Item` root with a centered `visualCapsule` Rectangle to ensure click areas extend to the full bar height while keeping the visual content properly sized:
 
 ```qml
 import QtQuick
@@ -18,7 +18,7 @@ import Quickshell
 import qs.Commons
 import qs.Widgets
 
-Rectangle {
+Item {
   id: root
 
   // Plugin API (injected by PluginService)
@@ -29,13 +29,60 @@ Rectangle {
   property string widgetId: ""
   property string section: ""
 
-  // Widget dimensions
-  implicitWidth: content.implicitWidth + Style.marginM * 2
-  implicitHeight: Style.barHeight
+  // Per-screen bar properties (for multi-monitor and vertical bar support)
+  readonly property string screenName: screen?.name ?? ""
+  readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
+  readonly property bool isBarVertical: barPosition === "left" || barPosition === "right"
+  readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
+  readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
 
-  // Your widget content here
+  // Content dimensions (visual capsule size)
+  readonly property real contentWidth: content.implicitWidth + Style.marginM * 2
+  readonly property real contentHeight: capsuleHeight
+
+  // Widget dimensions (extends to full bar height for better click area)
+  implicitWidth: contentWidth
+  implicitHeight: contentHeight
+
+  // Visual capsule - centered within the full click area
+  Rectangle {
+    id: visualCapsule
+    x: Style.pixelAlignCenter(parent.width, width)
+    y: Style.pixelAlignCenter(parent.height, height)
+    width: root.contentWidth
+    height: root.contentHeight
+    color: mouseArea.containsMouse ? Color.mHover : Style.capsuleColor
+    radius: Style.radiusL
+    border.color: Style.capsuleBorderColor
+    border.width: Style.capsuleBorderWidth
+
+    // Your widget content here (centered in visualCapsule)
+    RowLayout {
+      id: content
+      anchors.centerIn: parent
+      spacing: Style.marginS
+
+      // ... content items
+    }
+  }
+
+  // MouseArea at root level for extended click area
+  MouseArea {
+    id: mouseArea
+    anchors.fill: parent
+    hoverEnabled: true
+    cursorShape: Qt.PointingHandCursor
+
+    onClicked: {
+      // Handle click
+    }
+  }
 }
 ```
+
+:::tip[Extended Click Areas]
+The `Item` root with centered `visualCapsule` pattern ensures users can click slightly above or below the visible widget and still trigger the click event. This significantly improves usability, especially on high-density bars.
+:::
 
 ## Required Properties
 
@@ -69,38 +116,67 @@ property string section: ""
 
 ## Sizing
 
-Bar widgets should set their size appropriately:
+Bar widgets use `contentWidth` and `contentHeight` properties to define the visual capsule size, while `implicitWidth` and `implicitHeight` control the click area. Use per-screen properties to support multi-monitor setups and per-screen bar settings:
 
 ```qml
-// Horizontal bar (top/bottom)
-implicitWidth: content.implicitWidth + Style.marginM * 2
-implicitHeight: Style.barHeight
+// Per-screen bar properties (required for proper multi-monitor support)
+readonly property string screenName: screen?.name ?? ""
+readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
+readonly property bool isBarVertical: barPosition === "left" || barPosition === "right"
+readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
+readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
 
-// Vertical bar (left/right) - adapt to bar position
-readonly property string barPosition: Settings.data.bar.position
-readonly property bool isVertical: barPosition === "left" || barPosition === "right"
+// Define visual content size using per-screen capsuleHeight
+readonly property real contentWidth: content.implicitWidth + Style.marginM * 2
+readonly property real contentHeight: capsuleHeight
 
-implicitWidth: isVertical ? Style.capsuleHeight : content.implicitWidth + Style.marginM * 2
-implicitHeight: isVertical ? content.implicitHeight + Style.marginM * 2 : Style.capsuleHeight
+// Click area matches content (bar loader may extend it)
+implicitWidth: contentWidth
+implicitHeight: contentHeight
 ```
+
+For vertical bar support (left/right positions):
+
+```qml
+// Per-screen bar properties
+readonly property string screenName: screen?.name ?? ""
+readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
+readonly property bool isBarVertical: barPosition === "left" || barPosition === "right"
+readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
+readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
+
+// Swap width/height for vertical bars
+readonly property real contentWidth: isBarVertical ? capsuleHeight : content.implicitWidth + Style.marginM * 2
+readonly property real contentHeight: isBarVertical ? content.implicitHeight + Style.marginM * 2 : capsuleHeight
+
+implicitWidth: contentWidth
+implicitHeight: contentHeight
+```
+
+:::tip[Per-Screen Properties]
+Always use `Style.getCapsuleHeightForScreen(screenName)` and `Style.getBarFontSizeForScreen(screenName)` instead of `Style.capsuleHeight` or `Style.barFontSize`. This ensures your widget respects per-monitor bar settings and scales correctly on each screen.
+:::
 
 ## Styling
 
 Use Noctalia's built-in styling system for consistency:
 
 :::important[Required Styling]
-Bar widgets **must** have a background and an outline (`mOutline`) for proper visual integration with the bar. The outline requires these properties:
+Bar widgets **must** have a background and an outline for proper visual integration with the bar. Apply these to the `visualCapsule` Rectangle:
 
 ```qml
 Rectangle {
-  id: root
-  
-  // Required: Background color
-  color: Style.capsuleColor
-  
+  id: visualCapsule
+
+  // Required: Background color with hover support
+  color: mouseArea.containsMouse ? Color.mHover : Style.capsuleColor
+
   // Required: Outline border
   border.color: Style.capsuleBorderColor
   border.width: Style.capsuleBorderWidth
+
+  // Required: Rounded corners
+  radius: Style.radiusL
 }
 ```
 
@@ -112,7 +188,9 @@ Without these properties, the widget may not display correctly or may not integr
 import qs.Commons
 
 Rectangle {
-  // Surface colors
+  id: visualCapsule
+
+  // Surface colors (for visualCapsule background)
   color: Color.mSurface
   color: Color.mSurfaceVariant
   color: Style.capsuleColor // Recommended for bar widgets
@@ -151,9 +229,13 @@ Rectangle {
 
 ### Typography
 ```qml
+// Define per-screen font size at root level
+readonly property string screenName: screen?.name ?? ""
+readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
+
 NText {
-  // For bar widgets, use barFontSize for consistent sizing
-  pointSize: Style.barFontSize // Recommended for bar widget text
+  // For bar widgets, use per-screen barFontSize for consistent sizing
+  pointSize: barFontSize // Recommended for bar widget text
 
   // Other available sizes (for panels, dialogs, etc.)
   pointSize: Style.fontSizeXS
@@ -169,7 +251,7 @@ NText {
 ```
 
 :::tip
-Always use `Style.barFontSize` for text in bar widgets to ensure consistent sizing with other bar elements and proper scaling.
+Always use `Style.getBarFontSizeForScreen(screenName)` for text in bar widgets to ensure consistent sizing with other bar elements and proper scaling per-screen.
 :::
 
 ## Using Settings
@@ -209,20 +291,36 @@ MouseArea {
 ```
 
 ### Hover Effects
+
+Use a property binding on the `visualCapsule` color instead of `onEntered`/`onExited` handlers for cleaner, more reliable hover effects:
+
 ```qml
+Rectangle {
+  id: visualCapsule
+  // ... other properties
+
+  // Hover effect via binding - cleaner than onEntered/onExited
+  color: mouseArea.containsMouse ? Color.mHover : Style.capsuleColor
+}
+
 MouseArea {
+  id: mouseArea
   anchors.fill: parent
   hoverEnabled: true
+  cursorShape: Qt.PointingHandCursor
 
-  onEntered: {
-    root.color = Qt.lighter(root.color, 1.1)
-  }
-
-  onExited: {
-    root.color = Style.capsuleColor
+  onClicked: {
+    // Handle click
   }
 }
 ```
+
+:::tip
+Using a binding for color changes is more robust than imperative `onEntered`/`onExited` handlers because:
+- The color always reflects the current hover state
+- No risk of stuck hover states if the mouse exits unexpectedly
+- Works correctly when the widget is destroyed while hovered
+:::
 
 ### Tooltips
 ```qml
@@ -266,6 +364,166 @@ MouseArea {
 
 The `BarService.getTooltipDirection()` function automatically determines the correct tooltip direction based on the bar's position (top, bottom, left, or right).
 
+### Context Menus
+
+Add a right-click context menu to your widget using `NPopupContextMenu` and `PanelService`:
+
+```qml
+import qs.Services.UI
+import qs.Widgets
+
+Item {
+  id: root
+
+  property var pluginApi: null
+  property ShellScreen screen
+  // ... other properties
+
+  // Per-screen bar properties
+  readonly property string screenName: screen?.name ?? ""
+  readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
+
+  readonly property real contentWidth: content.implicitWidth + Style.marginM * 2
+  readonly property real contentHeight: capsuleHeight
+
+  implicitWidth: contentWidth
+  implicitHeight: contentHeight
+
+  Rectangle {
+    id: visualCapsule
+    x: Style.pixelAlignCenter(parent.width, width)
+    y: Style.pixelAlignCenter(parent.height, height)
+    width: root.contentWidth
+    height: root.contentHeight
+    color: mouseArea.containsMouse ? Color.mHover : Style.capsuleColor
+    radius: Style.radiusL
+    border.color: Style.capsuleBorderColor
+    border.width: Style.capsuleBorderWidth
+
+    RowLayout {
+      id: content
+      anchors.centerIn: parent
+      // ... content
+    }
+  }
+
+  NPopupContextMenu {
+    id: contextMenu
+
+    model: [
+      {
+        "label": pluginApi?.tr("menu.refresh") || "Refresh",
+        "action": "refresh",
+        "icon": "refresh"
+      },
+      {
+        "label": pluginApi?.tr("menu.settings") || "Settings",
+        "action": "settings",
+        "icon": "settings"
+      }
+    ]
+
+    onTriggered: action => {
+      // Always close the menu first
+      contextMenu.close();
+      PanelService.closeContextMenu(screen);
+
+      // Handle actions
+      if (action === "refresh") {
+        // Perform refresh
+      } else if (action === "settings") {
+        BarService.openPluginSettings(screen, pluginApi.manifest);
+      }
+    }
+  }
+
+  MouseArea {
+    id: mouseArea
+    anchors.fill: parent
+    hoverEnabled: true
+    cursorShape: Qt.PointingHandCursor
+    acceptedButtons: Qt.LeftButton | Qt.RightButton
+
+    onClicked: (mouse) => {
+      if (mouse.button === Qt.LeftButton) {
+        pluginApi?.openPanel(root.screen, root)
+      } else if (mouse.button === Qt.RightButton) {
+        PanelService.showContextMenu(contextMenu, root, screen);
+      }
+    }
+  }
+}
+```
+
+#### Context Menu Model
+
+Each item in the `model` array is an object with these properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `label` | string | Display text for the menu item |
+| `action` | string | Action identifier passed to `onTriggered` |
+| `icon` | string | Tabler icon name (optional) |
+| `enabled` | bool | Whether the item is clickable (default: `true`) |
+
+```qml
+model: [
+  { "label": "Active Item", "action": "active", "icon": "check" },
+  { "label": "Disabled Item", "action": "disabled", "icon": "x", "enabled": false }
+]
+```
+
+#### Using NIconButton
+
+If your widget extends `NIconButton`, use the built-in `onRightClicked` signal:
+
+```qml
+import qs.Services.UI
+import qs.Widgets
+
+NIconButton {
+  id: root
+
+  property var pluginApi: null
+  property ShellScreen screen
+
+  icon: "my-icon"
+
+  onClicked: {
+    pluginApi?.openPanel(root.screen, root)
+  }
+
+  onRightClicked: {
+    PanelService.showContextMenu(contextMenu, root, screen);
+  }
+
+  NPopupContextMenu {
+    id: contextMenu
+
+    model: [
+      {
+        "label": I18n.tr("actions.widget-settings"),
+        "action": "widget-settings",
+        "icon": "settings"
+      }
+    ]
+
+    onTriggered: action => {
+      contextMenu.close();
+      PanelService.closeContextMenu(screen);
+
+      if (action === "widget-settings") {
+        BarService.openPluginSettings(screen, pluginApi.manifest);
+      }
+    }
+  }
+}
+```
+
+:::important[Required Pattern]
+Always use `PanelService.showContextMenu()` to open context menus and call both `contextMenu.close()` and `PanelService.closeContextMenu(screen)` in the `onTriggered` handler. This ensures proper behavior across all Wayland compositors (Hyprland, Sway, Niri, labwc, etc.).
+:::
+
 ## Opening Panels
 
 If your plugin provides a panel, open it from the widget:
@@ -305,7 +563,7 @@ NIcon {
 NText {
   text: "Hello World"
   color: Color.mOnSurface
-  pointSize: Style.barFontSize // Use barFontSize for bar widgets
+  pointSize: barFontSize // Use per-screen barFontSize for bar widgets
   font.weight: Font.Medium
 }
 ```
@@ -363,7 +621,7 @@ import Quickshell
 import qs.Commons
 import qs.Widgets
 
-Rectangle {
+Item {
   id: root
 
   property var pluginApi: null
@@ -371,28 +629,45 @@ Rectangle {
   property string widgetId: ""
   property string section: ""
 
-  implicitWidth: row.implicitWidth + Style.marginM * 2
-  implicitHeight: Style.barHeight
+  // Per-screen bar properties
+  readonly property string screenName: screen?.name ?? ""
+  readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
+  readonly property bool isBarVertical: barPosition === "left" || barPosition === "right"
+  readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
+  readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
 
-  color: Style.capsuleColor
-  radius: Style.radiusM
-  border.color: Style.capsuleBorderColor
-  border.width: Style.capsuleBorderWidth
+  readonly property real contentWidth: row.implicitWidth + Style.marginM * 2
+  readonly property real contentHeight: capsuleHeight
 
-  RowLayout {
-    id: row
-    anchors.centerIn: parent
-    spacing: Style.marginS
+  implicitWidth: contentWidth
+  implicitHeight: contentHeight
 
-    NIcon {
-      icon: "check"
-      color: Color.mPrimary
-    }
+  Rectangle {
+    id: visualCapsule
+    x: Style.pixelAlignCenter(parent.width, width)
+    y: Style.pixelAlignCenter(parent.height, height)
+    width: root.contentWidth
+    height: root.contentHeight
+    color: Style.capsuleColor
+    radius: Style.radiusL
+    border.color: Style.capsuleBorderColor
+    border.width: Style.capsuleBorderWidth
 
-    NText {
-      text: "Ready"
-      color: Color.mOnSurface
-      pointSize: Style.barFontSize
+    RowLayout {
+      id: row
+      anchors.centerIn: parent
+      spacing: Style.marginS
+
+      NIcon {
+        icon: "check"
+        color: Color.mPrimary
+      }
+
+      NText {
+        text: "Ready"
+        color: Color.mOnSurface
+        pointSize: barFontSize
+      }
     }
   }
 }
@@ -407,7 +682,7 @@ import qs.Commons
 import qs.Widgets
 import qs.Services.UI
 
-Rectangle {
+Item {
   id: root
 
   property var pluginApi: null
@@ -415,46 +690,56 @@ Rectangle {
   property string widgetId: ""
   property string section: ""
 
+  // Per-screen bar properties
+  readonly property string screenName: screen?.name ?? ""
+  readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
+  readonly property bool isBarVertical: barPosition === "left" || barPosition === "right"
+  readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
+  readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
+
   property int count: pluginApi?.pluginSettings?.count || 0
 
-  implicitWidth: row.implicitWidth + Style.marginM * 2
-  implicitHeight: Style.barHeight
+  readonly property real contentWidth: row.implicitWidth + Style.marginM * 2
+  readonly property real contentHeight: capsuleHeight
 
-  color: Style.capsuleColor
-  radius: Style.radiusM
-  border.color: Style.capsuleBorderColor
-  border.width: Style.capsuleBorderWidth
+  implicitWidth: contentWidth
+  implicitHeight: contentHeight
 
-  RowLayout {
-    id: row
-    anchors.centerIn: parent
-    spacing: Style.marginS
+  Rectangle {
+    id: visualCapsule
+    x: Style.pixelAlignCenter(parent.width, width)
+    y: Style.pixelAlignCenter(parent.height, height)
+    width: root.contentWidth
+    height: root.contentHeight
+    color: mouseArea.containsMouse ? Color.mHover : Style.capsuleColor
+    radius: Style.radiusL
+    border.color: Style.capsuleBorderColor
+    border.width: Style.capsuleBorderWidth
 
-    NIcon {
-      icon: "numbers"
-      color: Color.mPrimary
-    }
+    RowLayout {
+      id: row
+      anchors.centerIn: parent
+      spacing: Style.marginS
 
-    NText {
-      text: root.count.toString()
-      color: Color.mOnSurface
-      pointSize: Style.barFontSize
-      font.weight: Font.Bold
+      NIcon {
+        icon: "numbers"
+        color: Color.mPrimary
+      }
+
+      NText {
+        text: root.count.toString()
+        color: Color.mOnSurface
+        pointSize: barFontSize
+        font.weight: Font.Bold
+      }
     }
   }
 
   MouseArea {
+    id: mouseArea
     anchors.fill: parent
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
-
-    onEntered: {
-      root.color = Qt.lighter(Style.capsuleColor, 1.1)
-    }
-
-    onExited: {
-      root.color = Style.capsuleColor
-    }
 
     onClicked: {
       root.count++
@@ -474,7 +759,7 @@ import Quickshell
 import qs.Commons
 import qs.Widgets
 
-Rectangle {
+Item {
   id: root
 
   property var pluginApi: null
@@ -482,46 +767,56 @@ Rectangle {
   property string widgetId: ""
   property string section: ""
 
+  // Per-screen bar properties
+  readonly property string screenName: screen?.name ?? ""
+  readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
+  readonly property bool isBarVertical: barPosition === "left" || barPosition === "right"
+  readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
+  readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
+
   readonly property string message:
     pluginApi?.pluginSettings?.message ||
     pluginApi?.manifest?.metadata?.defaultSettings?.message || ""
 
-  implicitWidth: row.implicitWidth + Style.marginM * 2
-  implicitHeight: Style.barHeight
+  readonly property real contentWidth: row.implicitWidth + Style.marginM * 2
+  readonly property real contentHeight: capsuleHeight
 
-  color: Style.capsuleColor
-  radius: Style.radiusM
-  border.color: Style.capsuleBorderColor
-  border.width: Style.capsuleBorderWidth
+  implicitWidth: contentWidth
+  implicitHeight: contentHeight
 
-  RowLayout {
-    id: row
-    anchors.centerIn: parent
-    spacing: Style.marginS
+  Rectangle {
+    id: visualCapsule
+    x: Style.pixelAlignCenter(parent.width, width)
+    y: Style.pixelAlignCenter(parent.height, height)
+    width: root.contentWidth
+    height: root.contentHeight
+    color: mouseArea.containsMouse ? Color.mHover : Style.capsuleColor
+    radius: Style.radiusL
+    border.color: Style.capsuleBorderColor
+    border.width: Style.capsuleBorderWidth
 
-    NIcon {
-      icon: "noctalia"
-    }
+    RowLayout {
+      id: row
+      anchors.centerIn: parent
+      spacing: Style.marginS
 
-    NText {
-      text: root.message
-      color: Color.mOnSurface
-      pointSize: Style.barFontSize
+      NIcon {
+        icon: "noctalia"
+      }
+
+      NText {
+        text: root.message
+        color: Color.mOnSurface
+        pointSize: barFontSize
+      }
     }
   }
 
   MouseArea {
+    id: mouseArea
     anchors.fill: parent
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
-
-    onEntered: {
-      root.color = Qt.lighter(Style.capsuleColor, 1.1)
-    }
-
-    onExited: {
-      root.color = Style.capsuleColor
-    }
 
     onClicked: {
       if (pluginApi) {
@@ -543,7 +838,7 @@ import Quickshell
 import qs.Commons
 import qs.Widgets
 
-Rectangle {
+Item {
   id: root
 
   property var pluginApi: null
@@ -551,51 +846,80 @@ Rectangle {
   property string widgetId: ""
   property string section: ""
 
-  readonly property string barPosition: Settings.data.bar.position
-  readonly property bool isVertical: barPosition === "left" || barPosition === "right"
+  // Per-screen bar properties
+  readonly property string screenName: screen?.name ?? ""
+  readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
+  readonly property bool isBarVertical: barPosition === "left" || barPosition === "right"
+  readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
+  readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
 
-  implicitWidth: isVertical ? Style.capsuleHeight : layout.implicitWidth + Style.marginM * 2
-  implicitHeight: isVertical ? layout.implicitHeight + Style.marginM * 2 : Style.capsuleHeight
+  readonly property real contentWidth: isBarVertical ? capsuleHeight : layout.implicitWidth + Style.marginM * 2
+  readonly property real contentHeight: isBarVertical ? layout.implicitHeight + Style.marginM * 2 : capsuleHeight
 
-  color: Style.capsuleColor
-  radius: Style.radiusM
+  implicitWidth: contentWidth
+  implicitHeight: contentHeight
 
-  Item {
-    id: layout
-    anchors.centerIn: parent
-    implicitWidth: rowLayout.visible ? rowLayout.implicitWidth : colLayout.implicitWidth
-    implicitHeight: rowLayout.visible ? rowLayout.implicitHeight : colLayout.implicitHeight
+  Rectangle {
+    id: visualCapsule
+    x: Style.pixelAlignCenter(parent.width, width)
+    y: Style.pixelAlignCenter(parent.height, height)
+    width: root.contentWidth
+    height: root.contentHeight
+    color: mouseArea.containsMouse ? Color.mHover : Style.capsuleColor
+    radius: Style.radiusL
+    border.color: Style.capsuleBorderColor
+    border.width: Style.capsuleBorderWidth
 
-    RowLayout {
-      id: rowLayout
-      visible: !root.isVertical
-      spacing: Style.marginS
+    Item {
+      id: layout
+      anchors.centerIn: parent
+      implicitWidth: rowLayout.visible ? rowLayout.implicitWidth : colLayout.implicitWidth
+      implicitHeight: rowLayout.visible ? rowLayout.implicitHeight : colLayout.implicitHeight
 
-      NIcon {
-        icon: "heart"
-        color: Color.mPrimary
+      RowLayout {
+        id: rowLayout
+        visible: !root.isBarVertical
+        spacing: Style.marginS
+
+        NIcon {
+          icon: "heart"
+          color: Color.mPrimary
+        }
+
+        NText {
+          text: "Widget"
+          color: Color.mOnSurface
+          pointSize: barFontSize
+        }
       }
 
-      NText {
-        text: "Widget"
-        color: Color.mOnSurface
+      ColumnLayout {
+        id: colLayout
+        visible: root.isBarVertical
+        spacing: Style.marginS
+
+        NIcon {
+          icon: "heart"
+          color: Color.mPrimary
+        }
+
+        NText {
+          text: "Widget"
+          color: Color.mOnSurface
+          pointSize: barFontSize
+        }
       }
     }
+  }
 
-    ColumnLayout {
-      id: colLayout
-      visible: root.isVertical
-      spacing: Style.marginS
+  MouseArea {
+    id: mouseArea
+    anchors.fill: parent
+    hoverEnabled: true
+    cursorShape: Qt.PointingHandCursor
 
-      NIcon {
-        icon: "heart"
-        color: Color.mPrimary
-      }
-
-      NText {
-        text: "Widget"
-        color: Color.mOnSurface
-      }
+    onClicked: {
+      // Handle click
     }
   }
 }
@@ -603,15 +927,16 @@ Rectangle {
 
 ## Best Practices
 
-1. **Keep it small**: Bar widgets should be compact and unobtrusive
-2. **Use consistent styling**: Stick to Noctalia's design system
-3. **Use `Style.barFontSize` for text**: Ensures consistent sizing with other bar elements
-4. **Handle missing data**: Always provide fallbacks for settings and data
-5. **Respect dark mode**: Use `Color.m*` colors that adapt to theme
-6. **Add hover effects**: Provide visual feedback for interactive elements
-7. **Log important events**: Use Logger for debugging
-8. **Test on vertical bars**: Ensure your widget works in all bar positions
-9. **Optimize performance**: Avoid expensive operations in the widget
+1. **Use the visual capsule pattern**: `Item` root with centered `Rectangle` visualCapsule for extended click areas
+2. **Keep it small**: Bar widgets should be compact and unobtrusive
+3. **Use consistent styling**: Stick to Noctalia's design system
+4. **Use per-screen properties**: Always use `Style.getCapsuleHeightForScreen(screenName)` and `Style.getBarFontSizeForScreen(screenName)` instead of global values
+5. **Handle missing data**: Always provide fallbacks for settings and data
+6. **Respect dark mode**: Use `Color.m*` colors that adapt to theme
+7. **Use binding for hover effects**: `color: mouseArea.containsMouse ? Color.mHover : Style.capsuleColor`
+8. **Log important events**: Use Logger for debugging
+9. **Test on vertical bars**: Ensure your widget works in all bar positions
+10. **Optimize performance**: Avoid expensive operations in the widget
 
 ## See Also
 
